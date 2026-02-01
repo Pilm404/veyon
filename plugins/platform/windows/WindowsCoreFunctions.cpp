@@ -245,6 +245,28 @@ QString WindowsCoreFunctions::activeDesktopName()
 
 
 
+bool isProgramRunningAsAdmin( ProcessId processId )
+{
+	bool elevated = false;
+	HANDLE process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
+
+	if (process_handle) {
+		HANDLE token_handle = nullptr;
+		if (OpenProcessToken(process_handle, TOKEN_QUERY, &token_handle)) {
+			TOKEN_ELEVATION elevation;
+			DWORD size = sizeof(TOKEN_ELEVATION);
+			if (GetTokenInformation(token_handle, TokenElevation, &elevation, sizeof(elevation), &size)) {
+				elevated = elevation.TokenIsElevated;
+			}
+			CloseHandle(token_handle);
+		}
+		CloseHandle(process_handle);
+	}
+	return elevated;
+}
+
+
+
 bool WindowsCoreFunctions::isRunningAsAdmin() const
 {
 	BOOL runningAsAdmin = false;
