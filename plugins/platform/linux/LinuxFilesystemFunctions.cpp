@@ -218,3 +218,12 @@ PlatformCoreFunctions::ProcessId LinuxFilesystemFunctions::findFileLockingProces
 
 	return PlatformCoreFunctions::InvalidProcessId;
 }
+
+
+
+bool LinuxFilesystemFunctions::verifyFileSignature( const QString& filePath ) const
+{
+	Q_UNUSED(filePath);
+
+	return true;
+}
