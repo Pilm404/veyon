@@ -23,7 +23,9 @@
  */
 
 #include <QDir>
+#include <QFile>
 
+#include <windows.h>
 #include <shlobj.h>
 #include <accctrl.h>
 #include <aclapi.h>
@@ -31,6 +33,9 @@
 #include <tlhelp32.h>
 #include <winternl.h>
 #include <wtsapi32.h>
+#include <wintrust.h>
+#include <softpub.h>
+#include <mscat.h>
 
 #include "UserGroupsBackendManager.h"
 #include "WindowsCoreFunctions.h"
@@ -335,4 +340,45 @@ PlatformCoreFunctions::ProcessId WindowsFilesystemFunctions::findFileLockingProc
 	}
 
 	return PlatformCoreFunctions::InvalidProcessId;
+}
+
+
+
+static bool verifyEmbeddedSignature(const QString& filePath)
+{
+
+
+	const wchar_t* path = reinterpret_cast<const wchar_t*>( filePath.utf16()) ;
+	GUID policy = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+
+	WINTRUST_FILE_INFO fileInfo{};
+	fileInfo.cbStruct = sizeof( fileInfo );
+	fileInfo.pcwszFilePath = path;
+
+	WINTRUST_DATA data{};
+	data.cbStruct = sizeof( data );
+	data.dwUIChoice = WTD_UI_NONE;
+	data.fdwRevocationChecks = WTD_REVOKE_NONE;
+	data.dwUnionChoice = WTD_CHOICE_FILE;
+	data.pFile = &fileInfo;
+	data.dwStateAction = WTD_STATEACTION_VERIFY;
+
+	LONG status = WinVerifyTrust( nullptr, &policy, &data );
+
+	data.dwStateAction = WTD_STATEACTION_CLOSE;
+	WinVerifyTrust( nullptr, &policy, &data );
+
+	return status == ERROR_SUCCESS;
+}
+
+
+
+bool WindowsFilesystemFunctions::verifyFileSignature( const QString& filePath ) const
+{
+	if ( filePath.isEmpty() || QFile::exists( filePath ) )
+	{
+		return false;
+	}
+
+	return verifyEmbeddedSignature( filePath );
 }

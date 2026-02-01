@@ -43,4 +43,6 @@ public:
 
 	PlatformCoreFunctions::ProcessId findFileLockingProcess(const QString& filePath) const override;
 
+	bool verifyFileSignature( const QString& filePath ) const override;
+
 };
