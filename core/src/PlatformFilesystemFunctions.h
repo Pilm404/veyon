@@ -46,4 +46,6 @@ public:
 
 	virtual PlatformCoreFunctions::ProcessId findFileLockingProcess(const QString& filePath) const = 0;
 
+	virtual bool verifyFileSignature( const QString& filePath ) const = 0;
+
 };
