@@ -205,6 +205,33 @@ QString LinuxCoreFunctions::activeDesktopName()
 
 
 
+bool LinuxCoreFunctions::isProgramRunningAsAdmin( ProcessId processId )
+{
+	QFile file( QStringLiteral("/proc/%1/status").arg( processId ) );
+	if( file.open( QFile::ReadOnly ) )
+	{
+		while( file.atEnd() == false )
+		{
+			const auto line = file.readLine();
+			if( line.startsWith( "Uid:" ) )
+			{
+				const auto parts = line.simplified().split( ' ' );
+				if( parts.size() >= 3 )
+				{
+					// Uid: real effective saved fs
+					// parts[0] is "Uid:", parts[1] is real, parts[2] is effective
+					bool ok = false;
+					const auto euid = parts[2].toUInt( &ok );
+					return ok && euid == 0;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+
 bool LinuxCoreFunctions::isRunningAsAdmin() const
 {
 	return getuid() == 0 || geteuid() == 0;

@@ -63,6 +63,8 @@ public:
 
 	QString activeDesktopName() override;
 
+	bool isProgramRunningAsAdmin( ProcessId processId ) override;
+
 	bool isRunningAsAdmin() const override;
 	bool runProgramAsAdmin( const QString& program, const QStringList& parameters ) override;
 
