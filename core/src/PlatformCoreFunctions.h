@@ -58,6 +58,8 @@ public:
 
 	virtual QString activeDesktopName() = 0;
 
+	virtual bool isProgramRunningAsAdmin( ProcessId processId ) = 0;
+
 	virtual bool isRunningAsAdmin() const = 0;
 	virtual bool runProgramAsAdmin( const QString& program, const QStringList& parameters ) = 0;
 
