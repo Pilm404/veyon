@@ -25,6 +25,7 @@
 #include <wtsapi32.h>
 
 #include <QCoreApplication>
+#include <QMessageBox>
 #include <QHostInfo>
 #include <QSettings>
 
@@ -176,6 +177,7 @@ void WindowsSessionFunctions::initInterferingWindowHandling()
 	WindowsPlatformConfiguration config(&VeyonCore::config());
 
 	m_interferingWindowsHandling = config.interferingWindowsHandling();
+	m_showTerminateProcessDialog = config.showTerminateProcessDialog();
 
 	if (m_interferingWindowsHandling != InterferingWindowHandling::None)
 	{
@@ -310,7 +312,19 @@ WINBOOL WindowsSessionFunctions::inspectDesktopWindow(HWND window)
 		case InterferingWindowHandling::TerminateProcess:
 		{
 			vDebug() << "Terminating process of interfering window" << filePath << processId << score;
-			TerminateProcess( processHandle, 0 );
+
+		    TerminateProcess( processHandle, 0 );
+
+			if ( m_showTerminateProcessDialog )
+			{
+				QMessageBox* box = new QMessageBox( QMessageBox::Information, tr( "Veyon" ),
+													tr( "The application %1 was closed because it interfered with screen sharing." )
+													.arg( filePath ), QMessageBox::Ok, nullptr );
+
+				box->setAttribute(Qt::WA_DeleteOnClose);
+				box->open();
+			}
+
 			break;
 		}
 		case InterferingWindowHandling::CloseSession:
