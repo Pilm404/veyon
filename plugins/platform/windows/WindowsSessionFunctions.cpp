@@ -200,53 +200,128 @@ void WindowsSessionFunctions::inspectDesktopWindows()
 
 WINBOOL WindowsSessionFunctions::inspectDesktopWindow(HWND window)
 {
-	const auto windowStyle = GetWindowLong(window, GWL_EXSTYLE);
-	if (windowStyle & (WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED)) {
-		COLORREF crKey;
+	DWORD processId = 0;
+	if ( GetWindowThreadProcessId( window, &processId ) == false )
+	{
+		return TRUE;
+	}
+
+	if ( VeyonCore::platform().coreFunctions().isProgramRunningAsAdmin( processId ) )
+	{
+		return TRUE;
+	}
+
+	if ( IsWindowVisible( window ) == false )
+	{
+		return TRUE;
+	}
+
+	auto processHandle = OpenProcess( PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE, 0, processId );
+
+	if ( processHandle == nullptr )
+	{
+		return TRUE;
+	}
+
+	wchar_t buffer[MAX_PATH]{};
+	DWORD size = MAX_PATH;
+
+	if ( QueryFullProcessImageNameW( processHandle, 0, buffer, &size ) == false )
+	{
+		CloseHandle( processHandle );
+		return TRUE;
+	}
+
+	QString filePath = QString::fromWCharArray( buffer );
+
+	int score = 0;
+
+	if ( VeyonCore::platform().filesystemFunctions().verifyFileSignature( filePath ) )
+	{
+		score -= 6;
+	}
+
+	RECT winRect;
+	if ( GetWindowRect( window, &winRect ) == false )
+	{
+		CloseHandle( processHandle );
+		return TRUE;
+	}
+
+	RECT desktopRect;
+	GetWindowRect( GetDesktopWindow(), &desktopRect );
+
+	RECT intersection;
+	if ( IntersectRect( &intersection, &winRect, &desktopRect ) == false )
+	{
+		CloseHandle( processHandle );
+		return TRUE;
+	}
+
+	DWORD affinity = 0;
+	if ( GetWindowDisplayAffinity( window, &affinity ) )
+	{
+		if ( affinity == WDA_EXCLUDEFROMCAPTURE || affinity == WDA_MONITOR )
+		{
+			score += 3;
+		}
+	}
+
+	if ( GetWindowTextLengthW( window ) == 0 )
+	{
+		score += 3;
+	}
+
+	const auto windowStyle = GetWindowLong( window, GWL_EXSTYLE );
+
+	if ( (windowStyle & WS_EX_TRANSPARENT) || (windowStyle & WS_EX_TOPMOST) )
+	{
+		score += 3;
+	}
+
+	if ( windowStyle & WS_EX_TOOLWINDOW )
+	{
+		score += 1;
+	}
+
+	if ( windowStyle & WS_EX_LAYERED )
+	{
 		BYTE alpha;
 		DWORD flags;
-		if (GetLayeredWindowAttributes(window, &crKey, &alpha, &flags) && (flags & LWA_COLORKEY))
-		{
-			std::wstring windowTitle(GetWindowTextLength(window) + 1, L'\0');
-			GetWindowTextW(window, &windowTitle[0], windowTitle.size());
 
-			switch (m_interferingWindowsHandling)
+		if ( GetLayeredWindowAttributes( window, nullptr, &alpha, &flags ) )
+		{
+			if ( (flags & LWA_ALPHA) && alpha >= 255 )
 			{
-			case InterferingWindowHandling::FixWindowAttributes:
-				vDebug() << "fixing attributes of interfering window" << window << windowTitle << flags << crKey << alpha;
-				SetLayeredWindowAttributes(window, 0, 255, LWA_COLORKEY | LWA_ALPHA);
-				SetWindowLong(window, GWL_EXSTYLE,
-							  windowStyle & ~(WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOPMOST));
-				RedrawWindow(window, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
-				ShowWindow(window, SW_HIDE);
-				break;
-			case InterferingWindowHandling::TerminateProcess:
-			{
-				vDebug() << "terminating process of interfering window" << window << windowTitle << flags << crKey << alpha;
-				DWORD processId = 0;
-				if (GetWindowThreadProcessId(window, &processId))
-				{
-					const auto processHandle = OpenProcess(PROCESS_TERMINATE, 0, processId);
-					if (processHandle)
-					{
-						TerminateProcess(processHandle, 0);
-						CloseHandle(processHandle);
-					}
-					else
-					{
-						PostMessage(window, WM_QUIT, 0, 0);
-					}
-				}
-				break;
+				score += 2;
 			}
-			case InterferingWindowHandling::CloseSession:
-				vDebug() << "closing session due to interfering window" << window << windowTitle << flags << crKey << alpha;
-				VeyonCore::platform().userFunctions().logoff();
-				break;
-			default:
-				break;
+
+			if ( flags & LWA_COLORKEY )
+			{
+				score += 2;
 			}
 		}
 	}
+
+	if ( score >= 8 )
+	{
+		switch (m_interferingWindowsHandling)
+		{
+		case InterferingWindowHandling::TerminateProcess:
+		{
+			vDebug() << "Terminating process of interfering window" << filePath << processId << score;
+			TerminateProcess( processHandle, 0 );
+			break;
+		}
+		case InterferingWindowHandling::CloseSession:
+			vDebug() << "Closing session due to interfering window" << filePath << processId << score;
+			VeyonCore::platform().userFunctions().logoff();
+			break;
+		default:
+			break;
+		}
+	}
+
+	CloseHandle( processHandle );
 	return TRUE;
 }

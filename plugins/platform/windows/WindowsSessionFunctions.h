@@ -36,7 +36,6 @@ class WindowsSessionFunctions : public PlatformSessionFunctions
 public:
 	enum class InterferingWindowHandling {
 		None,
-		FixWindowAttributes,
 		TerminateProcess,
 		CloseSession
 	};
@@ -62,7 +61,7 @@ private:
 	void inspectDesktopWindows();
 	WINBOOL inspectDesktopWindow(HWND window);
 
-	static constexpr auto DesktopWindowsInspectionInterval = 1000;
+	static constexpr auto DesktopWindowsInspectionInterval = 250;
 
 	InterferingWindowHandling m_interferingWindowsHandling = InterferingWindowHandling::None;
 	QTimer m_desktopWindowsInspectionTimer;
