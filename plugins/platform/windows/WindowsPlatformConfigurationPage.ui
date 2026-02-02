@@ -47,11 +47,6 @@
           </item>
           <item>
            <property name="text">
-            <string>Fix window attributes</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
             <string>Terminate related process</string>
            </property>
           </item>
