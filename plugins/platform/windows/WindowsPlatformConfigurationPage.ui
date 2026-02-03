@@ -59,13 +59,6 @@
         </item>
        </layout>
       </item>
-      <item>
-       <widget class="QCheckBox" name="showTerminateProcessDialog">
-        <property name="text">
-         <string>Show dialog when a process is terminated</string>
-        </property>
-       </widget>
-      </item>
      </layout>
     </widget>
    </item>

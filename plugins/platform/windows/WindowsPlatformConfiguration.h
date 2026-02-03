@@ -29,7 +29,6 @@
 
 #define FOREACH_WINDOWS_PLATFORM_CONFIG_PROPERTY(OP) \
 	OP( WindowsPlatformConfiguration, m_configuration, bool, isSoftwareSASEnabled, setSoftwareSASEnabled, "SoftwareSASEnabled", "Windows", true, Configuration::Property::Flag::Advanced ) \
-	OP( WindowsPlatformConfiguration, m_configuration, bool, showTerminateProcessDialog, setShowTerminateProcessDialog, "ShowTerminateProcessDialog", "Windows", true, Configuration::Property::Flag::Advanced ) \
 	OP( WindowsPlatformConfiguration, m_configuration, WindowsSessionFunctions::InterferingWindowHandling, interferingWindowsHandling, setInterferingWindowsHandling, "InterferingWindowsHandling", "Windows", QVariant::fromValue(WindowsSessionFunctions::InterferingWindowHandling::TerminateProcess), Configuration::Property::Flag::Advanced ) \
 	OP( WindowsPlatformConfiguration, m_configuration, bool, disableSSPIBasedUserAuthentication, setDisableSSPIBasedUserAuthentication, "DisableSSPIBasedUserAuthentication", "Windows", false, Configuration::Property::Flag::Advanced ) \
 	OP( WindowsPlatformConfiguration, m_configuration, bool, hideDesktopForScreenLock, setHideDesktopForScreenLock, "HideDesktopForScreenLock", "Windows", true, Configuration::Property::Flag::Advanced ) \

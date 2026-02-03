@@ -64,7 +64,6 @@ private:
 	static constexpr auto DesktopWindowsInspectionInterval = 250;
 
 	InterferingWindowHandling m_interferingWindowsHandling = InterferingWindowHandling::None;
-	bool m_showTerminateProcessDialog = false;
 	QTimer m_desktopWindowsInspectionTimer;
 
 };
